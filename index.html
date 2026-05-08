@@ -248,7 +248,6 @@
         .stat-card i { font-size: 2rem; margin-bottom: 10px; color: #00ff41; }
         .stat-card .stat-value { font-size: 1.5rem; font-weight: bold; }
 
-        /* Cracking Tool Section */
         .cracking-section {
             background: rgba(0, 0, 0, 0.7);
             border: 2px solid #ff4444;
@@ -714,6 +713,7 @@
                 </div>
             </div>
 
+            <!-- ============ FIXED REFERRAL CODE GENERATOR ============ -->
             <div id="generatorSection" class="generator-section" style="display:none;">
                 <h3><i class="fas fa-cogs"></i> REFERRAL CODE GENERATOR [OWNER]</h3>
                 <div class="generator-form">
@@ -721,14 +721,20 @@
                     <input type="number" id="generateCount" placeholder="How many?" value="1" min="1" max="10">
                     <button onclick="generateReferralCodes()"><i class="fas fa-magic"></i> GENERATE CODES</button>
                 </div>
+                <div id="generatorMessage" style="margin-top: 10px; color: #ffaa00; text-align: center;"></div>
             </div>
 
+            <!-- ============ FIXED REFERRAL CODES TABLE ============ -->
             <div class="codes-section">
                 <h3><i class="fas fa-list"></i> REFERRAL CODES</h3>
-                <table id="referralCodesTable">
-                    <thead><tr><th>CODE</th><th>CREATED</th><th>EXPIRES</th><th>STATUS</th><th>USED BY</th><th>ACTION</th></tr></thead>
-                    <tbody id="codesTableBody"></tbody>
-                </table>
+                <div style="overflow-x: auto;">
+                    <table id="referralCodesTable">
+                        <thead>
+                            <tr><th>CODE</th><th>CREATED</th><th>EXPIRES</th><th>STATUS</th><th>USED BY</th><th>ACTION</th></tr>
+                        </thead>
+                        <tbody id="codesTableBody"></tbody>
+                     </table>
+                </div>
             </div>
 
             <div class="codes-section">
@@ -747,35 +753,389 @@
     </div>
 
     <script>
+        // ============ FIXED REFERRAL CODE SYSTEM ============
+        const REFERRAL_CODES_KEY = 'referral_codes_list_fixed';
+        const USERS_KEY = 'src_users_fixed';
+        
+        // Initialize referral codes
+        function initReferralCodes() {
+            if (!localStorage.getItem(REFERRAL_CODES_KEY)) {
+                const demoCode = generateRandomCode();
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 30);
+                
+                const demoCodes = [{
+                    id: Date.now(),
+                    code: demoCode,
+                    createdBy: 'owner',
+                    createdAt: new Date().toISOString(),
+                    expiresAt: expiryDate.toISOString(),
+                    status: 'active',
+                    usedBy: null
+                }];
+                localStorage.setItem(REFERRAL_CODES_KEY, JSON.stringify(demoCodes));
+            }
+        }
+        
+        function generateRandomCode() {
+            const prefix = ['SRC', 'VIP', 'PRO', 'MEGA', 'ULTRA', 'GOLD', 'PLUS', 'XD'];
+            const randomPrefix = prefix[Math.floor(Math.random() * prefix.length)];
+            const randomNum = Math.floor(Math.random() * 9000 + 1000);
+            const randomChars = Math.random().toString(36).substring(2, 6).toUpperCase();
+            return `${randomPrefix}-${randomNum}${randomChars}`;
+        }
+        
+        function isCodeExpired(expiryDate) {
+            return new Date() > new Date(expiryDate);
+        }
+        
+        function generateReferralCodes() {
+            const currentUser = getCurrentUser();
+            if (!currentUser || currentUser.role !== 'owner') {
+                alert('Only OWNER can generate codes!');
+                return;
+            }
+            
+            const expiryDays = parseInt(document.getElementById('expiryDays').value);
+            const count = parseInt(document.getElementById('generateCount').value);
+            
+            if (isNaN(expiryDays) || expiryDays < 1) {
+                alert('Please enter valid expiry days!');
+                return;
+            }
+            
+            if (isNaN(count) || count < 1 || count > 20) {
+                alert('Please enter valid count (1-20)!');
+                return;
+            }
+            
+            let codes = JSON.parse(localStorage.getItem(REFERRAL_CODES_KEY) || '[]');
+            const now = new Date();
+            let generated = 0;
+            
+            for (let i = 0; i < count; i++) {
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + expiryDays);
+                
+                const newCode = {
+                    id: Date.now() + i + Math.random(),
+                    code: generateRandomCode(),
+                    createdBy: currentUser.username,
+                    createdAt: now.toISOString(),
+                    expiresAt: expiryDate.toISOString(),
+                    status: 'active',
+                    usedBy: null
+                };
+                codes.push(newCode);
+                generated++;
+            }
+            
+            localStorage.setItem(REFERRAL_CODES_KEY, JSON.stringify(codes));
+            
+            const msgDiv = document.getElementById('generatorMessage');
+            msgDiv.innerHTML = `✅ Generated ${generated} referral code(s)!`;
+            msgDiv.style.color = '#00ff41';
+            setTimeout(() => {
+                msgDiv.innerHTML = '';
+            }, 3000);
+            
+            loadReferralCodes();
+            alert(`Generated ${generated} referral code(s)!`);
+        }
+        
+        function loadReferralCodes() {
+            const codes = JSON.parse(localStorage.getItem(REFERRAL_CODES_KEY) || '[]');
+            const tbody = document.getElementById('codesTableBody');
+            
+            if (codes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No referral codes yet. Generate some!</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = '';
+            codes.forEach(code => {
+                const expired = isCodeExpired(code.expiresAt);
+                let status = 'ACTIVE';
+                let statusColor = '#00ff41';
+                
+                if (code.status === 'used') {
+                    status = 'USED';
+                    statusColor = '#ffaa00';
+                } else if (expired) {
+                    status = 'EXPIRED';
+                    statusColor = '#ff4444';
+                }
+                
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td><code style="font-size: 12px;">${code.code}</code></td>
+                    <td>${new Date(code.createdAt).toLocaleDateString()}</td>
+                    <td>${new Date(code.expiresAt).toLocaleDateString()}</td>
+                    <td style="color: ${statusColor}; font-weight: bold;">${status}</td>
+                    <td>${code.usedBy || '-'}</td>
+                    <td>
+                        <button onclick="copyToClipboard('${code.code}')" style="background: #008f23; padding: 5px 10px; width: auto; font-size: 11px;">
+                            <i class="fas fa-copy"></i> COPY
+                        </button>
+                        ${code.status === 'active' && !expired ? `<button onclick="deleteReferralCode('${code.id}')" style="background: #ff4444; padding: 5px 10px; width: auto; font-size: 11px; margin-left: 5px;">
+                            <i class="fas fa-trash"></i>
+                        </button>` : ''}
+                    </td>
+                `;
+            });
+        }
+        
+        function deleteReferralCode(codeId) {
+            if (confirm('Delete this referral code?')) {
+                let codes = JSON.parse(localStorage.getItem(REFERRAL_CODES_KEY) || '[]');
+                codes = codes.filter(c => c.id != codeId);
+                localStorage.setItem(REFERRAL_CODES_KEY, JSON.stringify(codes));
+                loadReferralCodes();
+                alert('Referral code deleted!');
+            }
+        }
+        
+        function validateReferralCode(code) {
+            const codes = JSON.parse(localStorage.getItem(REFERRAL_CODES_KEY) || '[]');
+            const foundCode = codes.find(c => c.code === code && c.status === 'active');
+            
+            if (!foundCode) return { valid: false, message: 'Invalid referral code!' };
+            if (isCodeExpired(foundCode.expiresAt)) {
+                foundCode.status = 'expired';
+                localStorage.setItem(REFERRAL_CODES_KEY, JSON.stringify(codes));
+                return { valid: false, message: 'Referral code has expired!' };
+            }
+            
+            return { valid: true, message: 'Valid code!', codeData: foundCode };
+        }
+        
+        function markCodeAsUsed(code, username) {
+            let codes = JSON.parse(localStorage.getItem(REFERRAL_CODES_KEY) || '[]');
+            const index = codes.findIndex(c => c.code === code);
+            if (index !== -1) {
+                codes[index].status = 'used';
+                codes[index].usedBy = username;
+                localStorage.setItem(REFERRAL_CODES_KEY, JSON.stringify(codes));
+            }
+        }
+        
+        // ============ USER SYSTEM ============
+        function initUsers() {
+            if (!localStorage.getItem(USERS_KEY)) {
+                const defaultUsers = {
+                    'owner': {
+                        username: 'owner',
+                        password: btoa('owner123'),
+                        role: 'owner',
+                        balance: 100000,
+                        referrals: [],
+                        purchaseHistory: [],
+                        createdAt: new Date().toISOString()
+                    }
+                };
+                localStorage.setItem(USERS_KEY, JSON.stringify(defaultUsers));
+            }
+        }
+        
+        function hashPassword(pw) { return btoa(pw); }
+        
+        function registerUser(username, password, referralCode) {
+            const users = JSON.parse(localStorage.getItem(USERS_KEY));
+            if (users[username]) return { success: false, message: 'Username exists!' };
+            
+            const validation = validateReferralCode(referralCode);
+            if (!validation.valid) return { success: false, message: validation.message };
+            
+            markCodeAsUsed(referralCode, username);
+            
+            const newUser = {
+                username: username,
+                password: hashPassword(password),
+                role: 'user',
+                balance: 50,
+                referredBy: referralCode,
+                referrals: [],
+                purchaseHistory: [],
+                createdAt: new Date().toISOString()
+            };
+            
+            users[username] = newUser;
+            localStorage.setItem(USERS_KEY, JSON.stringify(users));
+            
+            // Update stats
+            updateActiveUsersCount();
+            
+            return { success: true, message: `Registration successful! You earned $50 bonus!` };
+        }
+        
+        function loginUser(username, password) {
+            const users = JSON.parse(localStorage.getItem(USERS_KEY));
+            const user = users[username];
+            if (!user || user.password !== hashPassword(password)) return { success: false, message: 'Invalid credentials!' };
+            localStorage.setItem('src_session', JSON.stringify({ username: user.username, role: user.role, balance: user.balance }));
+            return { success: true };
+        }
+        
+        function getCurrentUser() {
+            const session = localStorage.getItem('src_session');
+            return session ? JSON.parse(session) : null;
+        }
+        
+        function isLoggedIn() { return getCurrentUser() !== null; }
+        function isOwner() { const u = getCurrentUser(); return u && u.role === 'owner'; }
+        function logout() { localStorage.removeItem('src_session'); location.reload(); }
+        
+        function updateActiveUsersCount() {
+            const users = JSON.parse(localStorage.getItem(USERS_KEY));
+            const activeCount = Object.values(users).filter(u => u.role !== 'owner').length;
+            const activeUsersEl = document.getElementById('activeUsers');
+            if (activeUsersEl) activeUsersEl.textContent = activeCount;
+        }
+        
+        function updateDashboard() {
+            const user = getCurrentUser();
+            if (!user) return;
+            
+            const users = JSON.parse(localStorage.getItem(USERS_KEY));
+            const userData = users[user.username];
+            
+            document.getElementById('currentUser').textContent = user.username.toUpperCase();
+            document.getElementById('currentRole').textContent = user.role.toUpperCase();
+            document.getElementById('balanceAmount').textContent = `$${user.balance.toLocaleString()}`;
+            
+            updateActiveUsersCount();
+            loadReferralCodes();
+            loadSrcProducts();
+            
+            if (user.role === 'owner') {
+                document.getElementById('balanceManagerSection').style.display = 'block';
+                document.getElementById('generatorSection').style.display = 'block';
+                document.getElementById('usersTableSection').style.display = 'block';
+                loadUsersTable();
+            } else {
+                document.getElementById('balanceManagerSection').style.display = 'none';
+                document.getElementById('generatorSection').style.display = 'none';
+                document.getElementById('usersTableSection').style.display = 'none';
+            }
+        }
+        
+        function loadUsersTable() {
+            const users = JSON.parse(localStorage.getItem(USERS_KEY));
+            const tbody = document.getElementById('usersTableBody');
+            tbody.innerHTML = '';
+            for (const [username, data] of Object.entries(users)) {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${username}${data.role === 'owner' ? ' 👑' : ''}</td>
+                        <td>${data.role}</td>
+                        <td>$${data.balance.toLocaleString()}</td>
+                        <td>${new Date(data.createdAt).toLocaleDateString()}</td>
+                        <td><button onclick="quickAddBalance('${username}')" style="background:#ffaa00;padding:5px 10px;">ADD</button></td>
+                    </tr>
+                `;
+            }
+        }
+        
+        function quickAddBalance(username) {
+            if (!isOwner()) return;
+            const amount = prompt('Enter amount:', '100');
+            if (amount && !isNaN(amount)) {
+                const users = JSON.parse(localStorage.getItem(USERS_KEY));
+                if (users[username]) {
+                    users[username].balance += parseInt(amount);
+                    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                    loadUsersTable();
+                    updateDashboard();
+                    alert(`Added $${amount} to ${username}`);
+                }
+            }
+        }
+        
+        function manageUserBalance() {
+            if (!isOwner()) { alert('Only owner!'); return; }
+            const target = document.getElementById('targetUsername').value;
+            const amount = parseInt(document.getElementById('amountToAdd').value);
+            if (!target || !amount) { alert('Enter username and amount!'); return; }
+            
+            const users = JSON.parse(localStorage.getItem(USERS_KEY));
+            if (users[target]) {
+                users[target].balance += amount;
+                localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                alert(`Updated ${target}: $${amount}`);
+                loadUsersTable();
+                updateDashboard();
+            } else {
+                alert('User not found!');
+            }
+        }
+        
+        const srcProducts = [
+            { id: 1, name: "Advanced Python RAT", price: 500, description: "Complete Python RAT with AES" },
+            { id: 2, name: "LUA Script Obfuscator", price: 1200, description: "Obfuscate LUA scripts" },
+            { id: 3, name: "Keylogger Source", price: 300, description: "Advanced keylogger" },
+            { id: 4, name: "Discord Token Grabber", price: 200, description: "Token grabber" },
+            { id: 5, name: "Crypto Stealer", price: 800, description: "Wallet stealer" },
+            { id: 6, name: "AES Encryption Tool", price: 400, description: "Standalone AES tool" }
+        ];
+        
+        function loadSrcProducts() {
+            const container = document.getElementById('srcGrid');
+            if (!container) return;
+            container.innerHTML = srcProducts.map(p => `
+                <div class="src-card">
+                    <h4><i class="fas fa-code"></i> ${p.name}</h4>
+                    <div class="src-price">$${p.price}</div>
+                    <div class="src-description">${p.description}</div>
+                    <button onclick="purchaseSrc(${p.id})">PURCHASE</button>
+                </div>
+            `).join('');
+        }
+        
+        function purchaseSrc(productId) {
+            const user = getCurrentUser();
+            const product = srcProducts.find(p => p.id === productId);
+            if (!product) return;
+            if (user.balance < product.price) { alert('Insufficient balance!'); return; }
+            
+            const users = JSON.parse(localStorage.getItem(USERS_KEY));
+            if (users[user.username]) {
+                users[user.username].balance -= product.price;
+                localStorage.setItem(USERS_KEY, JSON.stringify(users));
+                
+                const session = getCurrentUser();
+                session.balance = users[user.username].balance;
+                localStorage.setItem('src_session', JSON.stringify(session));
+                
+                alert(`Purchased ${product.name}!`);
+                updateDashboard();
+            }
+        }
+        
         // ============ CRACKING TOOL FUNCTIONS ============
         let selectedFile = null;
         let crackedContent = null;
         
-        // Drag and drop functionality
         const dropZone = document.getElementById('fileDropZone');
-        
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
-        
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-        });
-        
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleFile(files[0]);
-            }
-        });
+        if (dropZone) {
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) handleFile(files[0]);
+            });
+        }
         
         function handleFileSelect(input) {
-            if (input.files.length > 0) {
-                handleFile(input.files[0]);
-            }
+            if (input.files.length > 0) handleFile(input.files[0]);
         }
         
         function handleFile(file) {
@@ -783,7 +1143,6 @@
                 alert('Please select a .so (Shared Object) file!');
                 return;
             }
-            
             selectedFile = file;
             document.getElementById('fileName').textContent = file.name;
             document.getElementById('fileSize').textContent = file.size;
@@ -793,16 +1152,13 @@
         }
         
         function crackSoFile() {
-            if (!selectedFile) {
-                alert('Please select a .so file first!');
-                return;
-            }
+            if (!selectedFile) { alert('Please select a .so file first!'); return; }
             
             const resultDiv = document.getElementById('crackResult');
             const crackBtn = document.getElementById('crackBtn');
             
             resultDiv.style.display = 'block';
-            resultDiv.innerHTML = '⏳ Processing file and removing ##key patterns...\n';
+            resultDiv.innerHTML = '⏳ Processing file...\n';
             crackBtn.disabled = true;
             crackBtn.textContent = 'CRACKING...';
             
@@ -810,88 +1166,46 @@
             reader.onload = function(e) {
                 try {
                     let content = e.target.result;
-                    
-                    // Convert to string for text processing
-                    let textContent = '';
-                    if (content instanceof ArrayBuffer) {
-                        textContent = new TextDecoder('utf-8').decode(content);
-                    } else {
-                        textContent = content;
-                    }
-                    
-                    // Find and remove ##key patterns
+                    let textContent = new TextDecoder('utf-8').decode(content);
                     let originalSize = textContent.length;
-                    let removedCount = 0;
-                    
-                    // Remove ##key pattern
-                    const pattern = /##key/g;
-                    const matches = textContent.match(pattern);
-                    removedCount = matches ? matches.length : 0;
-                    
-                    let crackedText = textContent.replace(pattern, '');
-                    
-                    // Also remove variations
+                    let matches = textContent.match(/##key/g);
+                    let removedCount = matches ? matches.length : 0;
+                    let crackedText = textContent.replace(/##key/g, '');
                     crackedText = crackedText.replace(/#{2,}key/gi, '');
-                    crackedText = crackedText.replace(/##\s*key/gi, '');
-                    crackedText = crackedText.replace(/#key#/gi, '');
-                    
                     let newSize = crackedText.length;
-                    
-                    // Convert back to ArrayBuffer for binary files
                     const encoder = new TextEncoder();
                     crackedContent = encoder.encode(crackedText);
                     
-                    resultDiv.innerHTML = `
-✅ CRACKING SUCCESSFUL!
-
-📁 Original File: ${selectedFile.name}
-📊 Original Size: ${originalSize} bytes
-📊 New Size: ${newSize} bytes
-🔑 Removed: ${removedCount} instances of ##key
-
-💾 Cracked file is ready for download as: lib_crack.so
-
-⚠️ The ##key protection has been removed from the file.
-                    `;
-                    
+                    resultDiv.innerHTML = `✅ CRACKING SUCCESSFUL!\n\n📁 File: ${selectedFile.name}\n📊 Original Size: ${originalSize} bytes\n📊 New Size: ${newSize} bytes\n🔑 Removed: ${removedCount} instances of ##key\n\n💾 Ready for download as: lib_crack.so`;
                     document.getElementById('downloadBtn').style.display = 'block';
-                    
                 } catch (error) {
-                    resultDiv.innerHTML = `❌ Error processing file: ${error.message}`;
+                    resultDiv.innerHTML = `❌ Error: ${error.message}`;
                 } finally {
                     crackBtn.disabled = false;
                     crackBtn.textContent = 'CRACK & REMOVE ##key';
                 }
             };
-            
             reader.onerror = function() {
                 resultDiv.innerHTML = '❌ Error reading file!';
                 crackBtn.disabled = false;
                 crackBtn.textContent = 'CRACK & REMOVE ##key';
             };
-            
             reader.readAsArrayBuffer(selectedFile);
         }
         
         function downloadCrackedFile() {
-            if (!crackedContent) {
-                alert('No cracked file available. Please crack a file first!');
-                return;
-            }
-            
+            if (!crackedContent) { alert('No cracked file available!'); return; }
             const blob = new Blob([crackedContent], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'lib_crack.so';
-            document.body.appendChild(a);
             a.click();
-            document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            
             alert('Download started: lib_crack.so');
         }
         
+        // ============ UI FUNCTIONS ============
         function openCrackingTool() {
             toggleMenu();
             document.getElementById('crackingTool').classList.add('active');
@@ -902,193 +1216,86 @@
             document.getElementById('trackingTool').classList.remove('active');
         }
         
-        // ============ LUA CODE EDITOR ============
-        function runLuaCode() {
-            const code = document.getElementById('luaEditorCode').value;
-            const outputDiv = document.getElementById('luaEditorOutput');
-            outputDiv.innerHTML = '⏳ Running Lua code...\n';
-            
-            try {
-                let output = '';
-                const print = function(...args) {
-                    output += args.join(' ') + '\n';
-                };
-                
-                let processedCode = code;
-                processedCode = processedCode.replace(/print\(([^\)]+)\)/g, (match, args) => {
-                    return `output += String(${args}) + '\\n';`;
-                });
-                processedCode = processedCode.replace(/local\s+(\w+)\s*=\s*(.+)/g, 'let $1 = $2;');
-                processedCode = processedCode.replace(/\.\./g, '+');
-                processedCode = processedCode.replace(/--[^\n]*/g, '');
-                
-                const func = new Function('output', processedCode);
-                func(output);
-                
-                if (output.trim() === '') {
-                    outputDiv.innerHTML = '✅ Code executed successfully! (No output)';
-                } else {
-                    outputDiv.innerHTML = output;
-                }
-            } catch(e) {
-                outputDiv.innerHTML = `❌ Error: ${e.message}`;
-            }
-        }
-        
-        function clearLuaEditor() {
-            document.getElementById('luaEditorCode').value = '-- Write your Lua code here\n\nprint("Hello World!")';
-            document.getElementById('luaEditorOutput').innerHTML = '▶ Output will appear here...';
-        }
-        
-        function copyLuaCode() {
-            const code = document.getElementById('luaEditorCode').value;
-            navigator.clipboard.writeText(code);
-            alert('Lua code copied!');
-        }
-        
-        function copyLuaOutput() {
-            const output = document.getElementById('luaEditorOutput').innerText;
-            navigator.clipboard.writeText(output);
-            alert('Output copied!');
-        }
-        
-        function loadLuaExample() {
-            const example = `-- Lua Example: Simple Calculator
-function add(a, b)
-    return a + b
-end
-
-local x = 25
-local y = 5
-
-print("x = " .. x)
-print("y = " .. y)
-print("x + y = " .. add(x, y))
-
-for i = 1, 5 do
-    print("Number: " .. i)
-end`;
-            document.getElementById('luaEditorCode').value = example;
-            document.getElementById('luaEditorOutput').innerHTML = '▶ Output will appear here...';
-        }
-        
-        // ============ C++ CODE EDITOR ============
-        function runCppCode() {
-            const code = document.getElementById('cppEditorCode').value;
-            const outputDiv = document.getElementById('cppEditorOutput');
-            outputDiv.innerHTML = '⏳ Running C++ code...\n';
-            
-            try {
-                let output = '';
-                const coutMatches = code.match(/cout\s*<<\s*([^;]+);/g);
-                if (coutMatches) {
-                    for (const coutLine of coutMatches) {
-                        let content = coutLine.match(/cout\s*<<\s*(.+);/)[1];
-                        content = content.replace(/<<\s*endl/g, '\\n');
-                        content = content.replace(/<<\s*/g, '+');
-                        try {
-                            const evalResult = eval(content);
-                            output += evalResult + '\n';
-                        } catch(e) {
-                            output += content.replace(/"/g, '') + '\n';
-                        }
-                    }
-                }
-                
-                if (output.trim() === '') {
-                    if (code.includes('Hello World')) {
-                        output = 'Hello World!\n';
-                    } else {
-                        outputDiv.innerHTML = '✅ Code compiled! (No output)';
-                        return;
-                    }
-                }
-                outputDiv.innerHTML = output;
-            } catch(e) {
-                outputDiv.innerHTML = `❌ Error: ${e.message}`;
-            }
-        }
-        
-        function clearCppEditor() {
-            document.getElementById('cppEditorCode').value = '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World!" << endl;\n    return 0;\n}';
-            document.getElementById('cppEditorOutput').innerHTML = '▶ Output will appear here...';
-        }
-        
-        function copyCppCode() {
-            const code = document.getElementById('cppEditorCode').value;
-            navigator.clipboard.writeText(code);
-            alert('C++ code copied!');
-        }
-        
-        function copyCppOutput() {
-            const output = document.getElementById('cppEditorOutput').innerText;
-            navigator.clipboard.writeText(output);
-            alert('Output copied!');
-        }
-        
-        function loadCppExample() {
-            const example = `#include <iostream>
-using namespace std;
-
-int main() {
-    int a = 15;
-    int b = 3;
-    
-    cout << "a = " << a << endl;
-    cout << "b = " << b << endl;
-    cout << "a + b = " << a + b << endl;
-    cout << "a - b = " << a - b << endl;
-    cout << "a * b = " << a * b << endl;
-    cout << "a / b = " << a / b << endl;
-    
-    return 0;
-}`;
-            document.getElementById('cppEditorCode').value = example;
-            document.getElementById('cppEditorOutput').innerHTML = '▶ Output will appear here...';
-        }
-        
         function openEditor(type) {
             toggleMenu();
-            document.getElementById('crackingTool').classList.remove('active');
-            document.getElementById('luaEditor').classList.remove('active');
-            document.getElementById('cppEditor').classList.remove('active');
-            document.getElementById('pythonEncryption').classList.remove('active');
-            document.getElementById('luaEncryption').classList.remove('active');
-            document.getElementById('trackingTool').classList.remove('active');
-            
-            if (type === 'lua') {
-                document.getElementById('luaEditor').classList.add('active');
-            } else if (type === 'cpp') {
-                document.getElementById('cppEditor').classList.add('active');
-            }
+            document.querySelectorAll('.editor-section, .encryption-section, .tracking-section, .cracking-section').forEach(s => s.classList.remove('active'));
+            if (type === 'lua') document.getElementById('luaEditor').classList.add('active');
+            else if (type === 'cpp') document.getElementById('cppEditor').classList.add('active');
         }
         
-        // Placeholder functions for existing features
-        function testMyOwnIP() { alert('IP Tracking - Check console for details'); }
-        function generateTrackingLink() { alert('Generate tracking link'); }
-        function trackPhoneNumber() { alert('Track phone number'); }
-        function pythonEncrypt() { alert('Python encrypt'); }
-        function pythonDecrypt() { alert('Python decrypt'); }
-        function luaEncrypt() { alert('Lua encrypt'); }
-        function luaDecrypt() { alert('Lua decrypt'); }
-        function generateReferralCodes() { alert('Generate codes'); }
-        function manageUserBalance() { alert('Manage balance'); }
-        function purchaseSrc(id) { alert('Purchase product'); }
-        function copyToClipboard(text) { navigator.clipboard.writeText(text); alert('Copied!'); }
-        function copyToClipboardFrom(id) { const text = document.getElementById(id).innerText; navigator.clipboard.writeText(text); alert('Copied!'); }
-        function toggleMenu() { document.getElementById('sideMenu').classList.toggle('open'); document.getElementById('menuOverlay').classList.toggle('active'); }
-        function openEncryption(type) { toggleMenu(); document.getElementById('pythonEncryption').classList.add('active'); }
-        function openTracking() { toggleMenu(); document.getElementById('trackingTool').classList.add('active'); }
-        function logout() { location.reload(); }
+        function openEncryption(type) {
+            toggleMenu();
+            document.querySelectorAll('.editor-section, .encryption-section, .tracking-section, .cracking-section').forEach(s => s.classList.remove('active'));
+            if (type === 'python') document.getElementById('pythonEncryption').classList.add('active');
+            else if (type === 'lua') document.getElementById('luaEncryption').classList.add('active');
+        }
+        
+        function openTracking() {
+            toggleMenu();
+            document.querySelectorAll('.editor-section, .encryption-section, .tracking-section, .cracking-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('trackingTool').classList.add('active');
+        }
+        
+        function showDashboard() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+            updateDashboard();
+        }
+        
         function showRegister() { document.getElementById('registerModal').style.display = 'flex'; }
         function closeRegister() { document.getElementById('registerModal').style.display = 'none'; }
         
-        // Initialize dashboard after login
+        function testMyOwnIP() { alert('IP Tracking: Your IP is ' + (navigator.userAgent || 'Unknown')); }
+        function generateTrackingLink() { alert('Generate tracking link - Feature coming soon'); }
+        function trackPhoneNumber() { alert('Track phone number - Feature coming soon'); }
+        function pythonEncrypt() { alert('Python AES Encryption - Coming soon'); }
+        function pythonDecrypt() { alert('Python AES Decryption - Coming soon'); }
+        function luaEncrypt() { alert('Lua AES Encryption - Coming soon'); }
+        function luaDecrypt() { alert('Lua AES Decryption - Coming soon'); }
+        function runLuaCode() { alert('Lua code execution - Coming soon'); }
+        function clearLuaEditor() { document.getElementById('luaEditorCode').value = ''; }
+        function copyLuaCode() { copyToClipboard(document.getElementById('luaEditorCode').value); }
+        function copyLuaOutput() { copyToClipboard(document.getElementById('luaEditorOutput').innerText); }
+        function loadLuaExample() { document.getElementById('luaEditorCode').value = '-- Lua Example\nprint("Hello World!")'; }
+        function runCppCode() { alert('C++ code execution - Coming soon'); }
+        function clearCppEditor() { document.getElementById('cppEditorCode').value = ''; }
+        function copyCppCode() { copyToClipboard(document.getElementById('cppEditorCode').value); }
+        function copyCppOutput() { copyToClipboard(document.getElementById('cppEditorOutput').innerText); }
+        function loadCppExample() { document.getElementById('cppEditorCode').value = '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World!" << endl;\n    return 0;\n}'; }
+        
+        function copyToClipboard(text) { navigator.clipboard.writeText(text); alert('Copied!'); }
+        function copyToClipboardFrom(id) { copyToClipboard(document.getElementById(id).innerText); }
+        
+        function toggleMenu() {
+            document.getElementById('sideMenu').classList.toggle('open');
+            document.getElementById('menuOverlay').classList.toggle('active');
+        }
+        
+        // ============ EVENT LISTENERS & INIT ============
         document.getElementById('loginForm')?.addEventListener('submit', (e) => {
             e.preventDefault();
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('dashboardSection').style.display = 'block';
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const result = loginUser(username, password);
+            if (result.success) showDashboard();
+            else alert('Invalid credentials!');
         });
+        
+        document.getElementById('registerForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const refCode = document.getElementById('refCode').value;
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regConfirmPassword').value;
+            if (password !== confirm) { alert('Passwords do not match!'); return; }
+            const result = registerUser(username, password, refCode);
+            alert(result.message);
+            if (result.success) closeRegister();
+        });
+        
+        initUsers();
+        initReferralCodes();
+        if (isLoggedIn()) showDashboard();
         
         // Matrix Background
         const canvas = document.getElementById('hackingCanvas');
@@ -1146,6 +1353,43 @@ int main() {
         resizeCanvas();
         initParticles();
         animate();
+        
+        // Make functions global
+        window.generateReferralCodes = generateReferralCodes;
+        window.deleteReferralCode = deleteReferralCode;
+        window.manageUserBalance = manageUserBalance;
+        window.quickAddBalance = quickAddBalance;
+        window.purchaseSrc = purchaseSrc;
+        window.copyToClipboard = copyToClipboard;
+        window.crackSoFile = crackSoFile;
+        window.downloadCrackedFile = downloadCrackedFile;
+        window.handleFileSelect = handleFileSelect;
+        window.toggleMenu = toggleMenu;
+        window.openCrackingTool = openCrackingTool;
+        window.openEditor = openEditor;
+        window.openEncryption = openEncryption;
+        window.openTracking = openTracking;
+        window.logout = logout;
+        window.showRegister = showRegister;
+        window.closeRegister = closeRegister;
+        window.testMyOwnIP = testMyOwnIP;
+        window.generateTrackingLink = generateTrackingLink;
+        window.trackPhoneNumber = trackPhoneNumber;
+        window.pythonEncrypt = pythonEncrypt;
+        window.pythonDecrypt = pythonDecrypt;
+        window.luaEncrypt = luaEncrypt;
+        window.luaDecrypt = luaDecrypt;
+        window.runLuaCode = runLuaCode;
+        window.clearLuaEditor = clearLuaEditor;
+        window.copyLuaCode = copyLuaCode;
+        window.copyLuaOutput = copyLuaOutput;
+        window.loadLuaExample = loadLuaExample;
+        window.runCppCode = runCppCode;
+        window.clearCppEditor = clearCppEditor;
+        window.copyCppCode = copyCppCode;
+        window.copyCppOutput = copyCppOutput;
+        window.loadCppExample = loadCppExample;
+        window.copyToClipboardFrom = copyToClipboardFrom;
     </script>
 </body>
 </html>
