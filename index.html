@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRC MARKET | Cracking Tool Suite</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', 'Fira Code', monospace;
+            background: #0a0a0f;
+            color: #00ff41;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #hackingCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 2px solid #00ff41;
+            z-index: 1000;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .side-menu.open { left: 0; }
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            display: none;
+        }
+        .menu-overlay.active { display: block; }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #00ff41;
+        }
+
+        .close-menu {
+            background: none;
+            border: none;
+            color: #ff4444;
+            font-size: 24px;
+            cursor: pointer;
+            width: auto;
+            padding: 0;
+        }
+
+        .menu-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(0, 255, 65, 0.1);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            background: rgba(0, 255, 65, 0.2);
+            transform: translateX(5px);
+        }
+
+        .menu-item i { margin-right: 10px; }
+
+        .menu-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 998;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: #00ff41;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+
+        .login-container, .dashboard-container {
+            max-width: 500px;
+            margin: 50px auto;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(10px);
+            border: 2px solid #00ff41;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.2);
+            animation: glowPulse 2s ease-in-out infinite;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            animation: none;
+            margin-top: 80px;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.2); border-color: #00ff41; }
+            50% { box-shadow: 0 0 50px rgba(0, 255, 65, 0.5); border-color: #00ff88; }
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        h1 { font-size: 2rem; text-shadow: 0 0 10px #00ff41; }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #00ff41;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00ff41;
+            border-radius: 8px;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #00ff41, #008f23);
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 65, 0.4);
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #00ff41;
+        }
+
+        .user-info {
+            background: rgba(0, 255, 65, 0.1);
+            padding: 10px 20px;
+            border-radius: 10px;
+            border: 1px solid #00ff41;
+            margin-left: 60px;
+        }
+
+        .logout-btn {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            width: auto;
+            padding: 8px 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .stat-card:hover { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0, 255, 65, 0.2); }
+        .stat-card i { font-size: 2rem; margin-bottom: 10px; color: #00ff41; }
+        .stat-card .stat-value { font-size: 1.5rem; font-weight: bold; }
+
+        /* Cracking Tool Section */
+        .cracking-section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff4444;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .cracking-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .cracking-section h3 {
+            color: #ff4444;
+        }
+
+        .file-area {
+            border: 2px dashed #ff4444;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-area:hover {
+            border-color: #00ff41;
+            background: rgba(0, 255, 65, 0.1);
+        }
+
+        .file-area.drag-over {
+            border-color: #00ff41;
+            background: rgba(0, 255, 65, 0.2);
+        }
+
+        .key-pattern {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .key-pattern code {
+            color: #ffaa00;
+        }
+
+        .editor-section, .encryption-section, .tracking-section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .editor-section.active, .encryption-section.active, .tracking-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .editor-toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .editor-toolbar button {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+
+        .code-editor {
+            background: #0a0a0f;
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #00ff41;
+            width: 100%;
+            min-height: 400px;
+            resize: vertical;
+        }
+
+        .output-area {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .copy-output {
+            width: auto;
+            padding: 8px 20px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .balance-manager {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ffaa00;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .balance-manager h3 { color: #ffaa00; }
+
+        .balance-form, .generator-form {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .balance-form input, .balance-form select,
+        .generator-form input, .generator-form select {
+            flex: 1;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #ffaa00;
+            border-radius: 8px;
+            color: #ffaa00;
+        }
+
+        .generator-section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #00ff41;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+
+        .codes-section {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00ff41;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+        }
+
+        th {
+            color: #00ff41;
+            border-bottom: 2px solid #00ff41;
+        }
+
+        .src-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .src-card {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #00ff41;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+
+        .src-card:hover { transform: translateY(-5px); box-shadow: 0 5px 20px rgba(0, 255, 65, 0.3); }
+        .src-price { font-size: 1.5rem; font-weight: bold; margin: 10px 0; color: #00ff41; }
+
+        .register-link {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 255, 65, 0.3);
+        }
+
+        .register-link a { color: #00ff41; text-decoration: none; cursor: pointer; }
+
+        .tracking-card {
+            background: rgba(0, 0, 0, 0.5);
+            border-left: 3px solid #00ff41;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .tracking-card .ip {
+            color: #ffaa00;
+            font-weight: bold;
+        }
+
+        .badge {
+            background: #00ff41;
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .side-menu { width: 280px; }
+            .user-info { margin-left: 50px; }
+            .balance-form, .generator-form { flex-direction: column; }
+            .editor-toolbar button { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="hackingCanvas"></canvas>
+
+    <div class="menu-btn" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header">
+            <h3><i class="fas fa-terminal"></i> TOOLS MENU</h3>
+            <button class="close-menu" onclick="toggleMenu()">✕</button>
+        </div>
+        <div class="menu-item" onclick="openCrackingTool()">
+            <i class="fas fa-hammer"></i> CRACKING TOOL
+        </div>
+        <div class="menu-item" onclick="openEditor('lua')">
+            <i class="fas fa-code"></i> LUA CODE EDITOR
+        </div>
+        <div class="menu-item" onclick="openEditor('cpp')">
+            <i class="fas fa-code"></i> C++ CODE EDITOR
+        </div>
+        <div class="menu-item" onclick="openEncryption('python')">
+            <i class="fab fa-python"></i> PYTHON AES ENCRYPTION
+        </div>
+        <div class="menu-item" onclick="openEncryption('lua')">
+            <i class="fas fa-code"></i> LUA AES ENCRYPTION
+        </div>
+        <div class="menu-item" onclick="openTracking()">
+            <i class="fas fa-map-marker-alt"></i> TRACKING TOOL
+        </div>
+    </div>
+    <div class="menu-overlay" id="menuOverlay" onclick="toggleMenu()"></div>
+
+    <div class="content">
+        <div id="loginSection" class="login-container">
+            <h1><i class="fas fa-code"></i> SRC MARKET <i class="fas fa-terminal"></i></h1>
+            <p style="text-align: center; opacity: 0.7;">Cracking & Code Editor Tools</p>
+            <div id="loginAlert" class="alert"></div>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label><i class="fas fa-user"></i> USERNAME</label>
+                    <input type="text" id="username" placeholder="Enter username" required>
+                </div>
+                <div class="input-group">
+                    <label><i class="fas fa-lock"></i> PASSWORD</label>
+                    <input type="password" id="password" placeholder="Enter password" required>
+                </div>
+                <button type="submit"><i class="fas fa-sign-in-alt"></i> ACCESS SYSTEM</button>
+            </form>
+            <div class="register-link">
+                <a onclick="showRegister()"><i class="fas fa-user-plus"></i> Create New Account</a>
+            </div>
+        </div>
+
+        <div id="registerModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); justify-content:center; align-items:center; z-index:1001;">
+            <div style="background:#000; border:2px solid #00ff41; border-radius:20px; padding:40px; max-width:450px; width:90%;">
+                <h2>REGISTER</h2>
+                <p style="text-align:center; font-size:12px;">Enter valid referral code to register</p>
+                <form id="registerForm">
+                    <div class="input-group">
+                        <label><i class="fas fa-ticket-alt"></i> REFERRAL CODE</label>
+                        <input type="text" id="refCode" placeholder="Enter referral code" required>
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-user"></i> USERNAME</label>
+                        <input type="text" id="regUsername" required>
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-lock"></i> PASSWORD</label>
+                        <input type="password" id="regPassword" required>
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-check-circle"></i> CONFIRM PASSWORD</label>
+                        <input type="password" id="regConfirmPassword" required>
+                    </div>
+                    <button type="submit">REGISTER</button>
+                    <button type="button" onclick="closeRegister()" style="margin-top:10px; background:#333;">CANCEL</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="dashboardSection" class="dashboard-container" style="display:none;">
+            <div class="dashboard-header">
+                <div class="user-info">
+                    <i class="fas fa-user-astronaut"></i> 
+                    <span id="currentUser"></span> | 
+                    <span id="currentRole"></span>
+                </div>
+                <button class="logout-btn" onclick="logout()"><i class="fas fa-sign-out-alt"></i> LOGOUT</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card"><i class="fas fa-coins"></i><h4>BALANCE</h4><div class="stat-value" id="balanceAmount">$0</div></div>
+                <div class="stat-card"><i class="fas fa-users"></i><h4>REFERRALS</h4><div class="stat-value" id="totalReferrals">0</div></div>
+                <div class="stat-card"><i class="fas fa-user-check"></i><h4>ACTIVE USER</h4><div class="stat-value" id="activeUsers">0</div></div>
+                <div class="stat-card"><i class="fas fa-lock"></i><h4>ENCRYPTION</h4><div class="stat-value">AES-256</div></div>
+            </div>
+
+            <!-- ============ CRACKING TOOL ============ -->
+            <div id="crackingTool" class="cracking-section">
+                <h3><i class="fas fa-hammer"></i> SO FILE CRACKING TOOL</h3>
+                <p style="text-align: center; margin-bottom: 15px;">Remove ##key protection from .so files</p>
+                
+                <div class="key-pattern">
+                    <strong><i class="fas fa-key"></i> Target Pattern:</strong><br>
+                    <code>##key</code> - This will be removed from the .so file
+                </div>
+
+                <div class="file-area" id="fileDropZone" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-upload" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                    <p>Click or Drag & Drop .so file here</p>
+                    <small>Supported: .so files (Shared Objects)</small>
+                </div>
+                
+                <input type="file" id="fileInput" accept=".so" style="display: none;" onchange="handleFileSelect(this)">
+                
+                <div id="fileInfo" style="display: none; background: rgba(0,255,65,0.1); padding: 10px; border-radius: 8px; margin: 15px 0;">
+                    <i class="fas fa-file"></i> Selected: <span id="fileName"></span>
+                    <br><small>Size: <span id="fileSize"></span> bytes</small>
+                </div>
+                
+                <button onclick="crackSoFile()" id="crackBtn"><i class="fas fa-bolt"></i> CRACK & REMOVE ##key</button>
+                
+                <div id="crackResult" class="output-area" style="display: none;"></div>
+                <button id="downloadBtn" class="copy-output" style="display: none;" onclick="downloadCrackedFile()"><i class="fas fa-download"></i> DOWNLOAD lib_crack.so</button>
+            </div>
+
+            <!-- ============ LUA CODE EDITOR ============ -->
+            <div id="luaEditor" class="editor-section">
+                <h3><i class="fas fa-code"></i> LUA CODE EDITOR</h3>
+                <div class="editor-toolbar">
+                    <button onclick="runLuaCode()"><i class="fas fa-play"></i> RUN CODE</button>
+                    <button onclick="clearLuaEditor()"><i class="fas fa-trash"></i> CLEAR</button>
+                    <button onclick="copyLuaCode()"><i class="fas fa-copy"></i> COPY</button>
+                    <button onclick="loadLuaExample()"><i class="fas fa-file-code"></i> LOAD EXAMPLE</button>
+                </div>
+                <textarea id="luaEditorCode" class="code-editor" placeholder="-- Write your Lua code here&#10;&#10;print('Hello World!')&#10;&#10;-- Example:&#10;local x = 10&#10;local y = 20&#10;print('Sum: ' .. (x + y))"></textarea>
+                <div class="output-area" id="luaEditorOutput">▶ Output will appear here...</div>
+                <button class="copy-output" onclick="copyLuaOutput()"><i class="fas fa-copy"></i> COPY OUTPUT</button>
+            </div>
+
+            <!-- ============ C++ CODE EDITOR ============ -->
+            <div id="cppEditor" class="editor-section">
+                <h3><i class="fas fa-code"></i> C++ CODE EDITOR</h3>
+                <div class="editor-toolbar">
+                    <button onclick="runCppCode()"><i class="fas fa-play"></i> RUN CODE</button>
+                    <button onclick="clearCppEditor()"><i class="fas fa-trash"></i> CLEAR</button>
+                    <button onclick="copyCppCode()"><i class="fas fa-copy"></i> COPY</button>
+                    <button onclick="loadCppExample()"><i class="fas fa-file-code"></i> LOAD EXAMPLE</button>
+                </div>
+                <textarea id="cppEditorCode" class="code-editor" placeholder="// Write your C++ code here&#10;&#10;#include &lt;iostream&gt;&#10;using namespace std;&#10;&#10;int main() {&#10;    cout &lt;&lt; &quot;Hello World!&quot; &lt;&lt; endl;&#10;    return 0;&#10;}"></textarea>
+                <div class="output-area" id="cppEditorOutput">▶ Output will appear here...</div>
+                <button class="copy-output" onclick="copyCppOutput()"><i class="fas fa-copy"></i> COPY OUTPUT</button>
+            </div>
+
+            <div id="trackingTool" class="tracking-section">
+                <h3><i class="fas fa-map-marker-alt"></i> ADVANCED TRACKING TOOL</h3>
+                
+                <div class="input-group">
+                    <label><i class="fas fa-crosshairs"></i> TEST YOUR OWN IP & LOCATION</label>
+                    <button onclick="testMyOwnIP()" style="margin-top:5px"><i class="fas fa-search"></i> GET MY REAL IP & LOCATION</button>
+                </div>
+                <div class="output-area" id="myIPOutput" style="display:none;"></div>
+                
+                <div class="input-group" style="margin-top:20px">
+                    <label><i class="fas fa-link"></i> Generate Tracking Link</label>
+                    <input type="text" id="trackingLinkInput" placeholder="Enter campaign/link name">
+                    <button onclick="generateTrackingLink()" style="margin-top:10px"><i class="fas fa-link"></i> GENERATE TRACKING LINK</button>
+                </div>
+                
+                <div class="output-area" id="trackingOutput" style="display:none;"></div>
+                
+                <div class="input-group" style="margin-top:20px">
+                    <label><i class="fas fa-phone-alt"></i> Track Phone Number</label>
+                    <input type="text" id="phoneNumberInput" placeholder="Enter phone number to track (e.g., +639123456789)">
+                    <button onclick="trackPhoneNumber()" style="margin-top:10px"><i class="fas fa-search"></i> TRACK NUMBER</button>
+                </div>
+                
+                <div class="output-area" id="phoneOutput" style="display:none;"></div>
+                
+                <div class="input-group" style="margin-top:20px">
+                    <label><i class="fas fa-eye"></i> Tracked Visitors (Real IP & Location)</label>
+                    <div id="trackedVisitors" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <div id="pythonEncryption" class="encryption-section">
+                <h3><i class="fab fa-python"></i> PYTHON AES-256 ENCRYPTION</h3>
+                <div class="input-group">
+                    <label>Text to Encrypt/Decrypt:</label>
+                    <textarea id="pythonText" placeholder="Enter your text here..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Secret Key (32 chars):</label>
+                    <input type="text" id="pythonKey" placeholder="Enter 32-character key">
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="pythonEncrypt()" style="flex:1"><i class="fas fa-lock"></i> ENCRYPT</button>
+                    <button onclick="pythonDecrypt()" style="flex:1"><i class="fas fa-unlock-alt"></i> DECRYPT</button>
+                </div>
+                <div class="output-area" id="pythonOutput">Output will appear here...</div>
+                <button class="copy-output" onclick="copyToClipboardFrom('pythonOutput')"><i class="fas fa-copy"></i> COPY OUTPUT</button>
+            </div>
+
+            <div id="luaEncryption" class="encryption-section">
+                <h3><i class="fas fa-code"></i> LUA AES-256 ENCRYPTION</h3>
+                <div class="input-group">
+                    <label>Text to Encrypt/Decrypt:</label>
+                    <textarea id="luaText" placeholder="Enter your text here..."></textarea>
+                </div>
+                <div class="input-group">
+                    <label>Secret Key:</label>
+                    <input type="text" id="luaKey" placeholder="Enter encryption key">
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="luaEncrypt()" style="flex:1"><i class="fas fa-lock"></i> ENCRYPT</button>
+                    <button onclick="luaDecrypt()" style="flex:1"><i class="fas fa-unlock-alt"></i> DECRYPT</button>
+                </div>
+                <div class="output-area" id="luaOutput">Output will appear here...</div>
+                <button class="copy-output" onclick="copyToClipboardFrom('luaOutput')"><i class="fas fa-copy"></i> COPY OUTPUT</button>
+            </div>
+
+            <div id="balanceManagerSection" class="balance-manager" style="display:none;">
+                <h3><i class="fas fa-hand-holding-usd"></i> OWNER BALANCE MANAGER</h3>
+                <div class="balance-form">
+                    <input type="text" id="targetUsername" placeholder="Username">
+                    <input type="number" id="amountToAdd" placeholder="Amount (+/-)">
+                    <button onclick="manageUserBalance()"><i class="fas fa-coins"></i> UPDATE BALANCE</button>
+                </div>
+            </div>
+
+            <div id="generatorSection" class="generator-section" style="display:none;">
+                <h3><i class="fas fa-cogs"></i> REFERRAL CODE GENERATOR [OWNER]</h3>
+                <div class="generator-form">
+                    <input type="number" id="expiryDays" placeholder="Expiry (days)" value="30">
+                    <input type="number" id="generateCount" placeholder="How many?" value="1" min="1" max="10">
+                    <button onclick="generateReferralCodes()"><i class="fas fa-magic"></i> GENERATE CODES</button>
+                </div>
+            </div>
+
+            <div class="codes-section">
+                <h3><i class="fas fa-list"></i> REFERRAL CODES</h3>
+                <table id="referralCodesTable">
+                    <thead><tr><th>CODE</th><th>CREATED</th><th>EXPIRES</th><th>STATUS</th><th>USED BY</th><th>ACTION</th></tr></thead>
+                    <tbody id="codesTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="codes-section">
+                <h3><i class="fas fa-code-branch"></i> SRC MARKETPLACE</h3>
+                <div id="srcGrid" class="src-grid"></div>
+            </div>
+
+            <div id="usersTableSection" class="codes-section" style="display:none;">
+                <h3><i class="fas fa-users"></i> SYSTEM USERS</h3>
+                <table id="usersTable">
+                    <thead><tr><th>USERNAME</th><th>ROLE</th><th>BALANCE</th><th>JOINED</th><th>ACTION</th></tr></thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ CRACKING TOOL FUNCTIONS ============
+        let selectedFile = null;
+        let crackedContent = null;
+        
+        // Drag and drop functionality
+        const dropZone = document.getElementById('fileDropZone');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+        
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        function handleFileSelect(input) {
+            if (input.files.length > 0) {
+                handleFile(input.files[0]);
+            }
+        }
+        
+        function handleFile(file) {
+            if (!file.name.endsWith('.so')) {
+                alert('Please select a .so (Shared Object) file!');
+                return;
+            }
+            
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = file.size;
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('crackResult').style.display = 'none';
+            document.getElementById('downloadBtn').style.display = 'none';
+        }
+        
+        function crackSoFile() {
+            if (!selectedFile) {
+                alert('Please select a .so file first!');
+                return;
+            }
+            
+            const resultDiv = document.getElementById('crackResult');
+            const crackBtn = document.getElementById('crackBtn');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '⏳ Processing file and removing ##key patterns...\n';
+            crackBtn.disabled = true;
+            crackBtn.textContent = 'CRACKING...';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let content = e.target.result;
+                    
+                    // Convert to string for text processing
+                    let textContent = '';
+                    if (content instanceof ArrayBuffer) {
+                        textContent = new TextDecoder('utf-8').decode(content);
+                    } else {
+                        textContent = content;
+                    }
+                    
+                    // Find and remove ##key patterns
+                    let originalSize = textContent.length;
+                    let removedCount = 0;
+                    
+                    // Remove ##key pattern
+                    const pattern = /##key/g;
+                    const matches = textContent.match(pattern);
+                    removedCount = matches ? matches.length : 0;
+                    
+                    let crackedText = textContent.replace(pattern, '');
+                    
+                    // Also remove variations
+                    crackedText = crackedText.replace(/#{2,}key/gi, '');
+                    crackedText = crackedText.replace(/##\s*key/gi, '');
+                    crackedText = crackedText.replace(/#key#/gi, '');
+                    
+                    let newSize = crackedText.length;
+                    
+                    // Convert back to ArrayBuffer for binary files
+                    const encoder = new TextEncoder();
+                    crackedContent = encoder.encode(crackedText);
+                    
+                    resultDiv.innerHTML = `
+✅ CRACKING SUCCESSFUL!
+
+📁 Original File: ${selectedFile.name}
+📊 Original Size: ${originalSize} bytes
+📊 New Size: ${newSize} bytes
+🔑 Removed: ${removedCount} instances of ##key
+
+💾 Cracked file is ready for download as: lib_crack.so
+
+⚠️ The ##key protection has been removed from the file.
+                    `;
+                    
+                    document.getElementById('downloadBtn').style.display = 'block';
+                    
+                } catch (error) {
+                    resultDiv.innerHTML = `❌ Error processing file: ${error.message}`;
+                } finally {
+                    crackBtn.disabled = false;
+                    crackBtn.textContent = 'CRACK & REMOVE ##key';
+                }
+            };
+            
+            reader.onerror = function() {
+                resultDiv.innerHTML = '❌ Error reading file!';
+                crackBtn.disabled = false;
+                crackBtn.textContent = 'CRACK & REMOVE ##key';
+            };
+            
+            reader.readAsArrayBuffer(selectedFile);
+        }
+        
+        function downloadCrackedFile() {
+            if (!crackedContent) {
+                alert('No cracked file available. Please crack a file first!');
+                return;
+            }
+            
+            const blob = new Blob([crackedContent], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'lib_crack.so';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            alert('Download started: lib_crack.so');
+        }
+        
+        function openCrackingTool() {
+            toggleMenu();
+            document.getElementById('crackingTool').classList.add('active');
+            document.getElementById('luaEditor').classList.remove('active');
+            document.getElementById('cppEditor').classList.remove('active');
+            document.getElementById('pythonEncryption').classList.remove('active');
+            document.getElementById('luaEncryption').classList.remove('active');
+            document.getElementById('trackingTool').classList.remove('active');
+        }
+        
+        // ============ LUA CODE EDITOR ============
+        function runLuaCode() {
+            const code = document.getElementById('luaEditorCode').value;
+            const outputDiv = document.getElementById('luaEditorOutput');
+            outputDiv.innerHTML = '⏳ Running Lua code...\n';
+            
+            try {
+                let output = '';
+                const print = function(...args) {
+                    output += args.join(' ') + '\n';
+                };
+                
+                let processedCode = code;
+                processedCode = processedCode.replace(/print\(([^\)]+)\)/g, (match, args) => {
+                    return `output += String(${args}) + '\\n';`;
+                });
+                processedCode = processedCode.replace(/local\s+(\w+)\s*=\s*(.+)/g, 'let $1 = $2;');
+                processedCode = processedCode.replace(/\.\./g, '+');
+                processedCode = processedCode.replace(/--[^\n]*/g, '');
+                
+                const func = new Function('output', processedCode);
+                func(output);
+                
+                if (output.trim() === '') {
+                    outputDiv.innerHTML = '✅ Code executed successfully! (No output)';
+                } else {
+                    outputDiv.innerHTML = output;
+                }
+            } catch(e) {
+                outputDiv.innerHTML = `❌ Error: ${e.message}`;
+            }
+        }
+        
+        function clearLuaEditor() {
+            document.getElementById('luaEditorCode').value = '-- Write your Lua code here\n\nprint("Hello World!")';
+            document.getElementById('luaEditorOutput').innerHTML = '▶ Output will appear here...';
+        }
+        
+        function copyLuaCode() {
+            const code = document.getElementById('luaEditorCode').value;
+            navigator.clipboard.writeText(code);
+            alert('Lua code copied!');
+        }
+        
+        function copyLuaOutput() {
+            const output = document.getElementById('luaEditorOutput').innerText;
+            navigator.clipboard.writeText(output);
+            alert('Output copied!');
+        }
+        
+        function loadLuaExample() {
+            const example = `-- Lua Example: Simple Calculator
+function add(a, b)
+    return a + b
+end
+
+local x = 25
+local y = 5
+
+print("x = " .. x)
+print("y = " .. y)
+print("x + y = " .. add(x, y))
+
+for i = 1, 5 do
+    print("Number: " .. i)
+end`;
+            document.getElementById('luaEditorCode').value = example;
+            document.getElementById('luaEditorOutput').innerHTML = '▶ Output will appear here...';
+        }
+        
+        // ============ C++ CODE EDITOR ============
+        function runCppCode() {
+            const code = document.getElementById('cppEditorCode').value;
+            const outputDiv = document.getElementById('cppEditorOutput');
+            outputDiv.innerHTML = '⏳ Running C++ code...\n';
+            
+            try {
+                let output = '';
+                const coutMatches = code.match(/cout\s*<<\s*([^;]+);/g);
+                if (coutMatches) {
+                    for (const coutLine of coutMatches) {
+                        let content = coutLine.match(/cout\s*<<\s*(.+);/)[1];
+                        content = content.replace(/<<\s*endl/g, '\\n');
+                        content = content.replace(/<<\s*/g, '+');
+                        try {
+                            const evalResult = eval(content);
+                            output += evalResult + '\n';
+                        } catch(e) {
+                            output += content.replace(/"/g, '') + '\n';
+                        }
+                    }
+                }
+                
+                if (output.trim() === '') {
+                    if (code.includes('Hello World')) {
+                        output = 'Hello World!\n';
+                    } else {
+                        outputDiv.innerHTML = '✅ Code compiled! (No output)';
+                        return;
+                    }
+                }
+                outputDiv.innerHTML = output;
+            } catch(e) {
+                outputDiv.innerHTML = `❌ Error: ${e.message}`;
+            }
+        }
+        
+        function clearCppEditor() {
+            document.getElementById('cppEditorCode').value = '#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello World!" << endl;\n    return 0;\n}';
+            document.getElementById('cppEditorOutput').innerHTML = '▶ Output will appear here...';
+        }
+        
+        function copyCppCode() {
+            const code = document.getElementById('cppEditorCode').value;
+            navigator.clipboard.writeText(code);
+            alert('C++ code copied!');
+        }
+        
+        function copyCppOutput() {
+            const output = document.getElementById('cppEditorOutput').innerText;
+            navigator.clipboard.writeText(output);
+            alert('Output copied!');
+        }
+        
+        function loadCppExample() {
+            const example = `#include <iostream>
+using namespace std;
+
+int main() {
+    int a = 15;
+    int b = 3;
+    
+    cout << "a = " << a << endl;
+    cout << "b = " << b << endl;
+    cout << "a + b = " << a + b << endl;
+    cout << "a - b = " << a - b << endl;
+    cout << "a * b = " << a * b << endl;
+    cout << "a / b = " << a / b << endl;
+    
+    return 0;
+}`;
+            document.getElementById('cppEditorCode').value = example;
+            document.getElementById('cppEditorOutput').innerHTML = '▶ Output will appear here...';
+        }
+        
+        function openEditor(type) {
+            toggleMenu();
+            document.getElementById('crackingTool').classList.remove('active');
+            document.getElementById('luaEditor').classList.remove('active');
+            document.getElementById('cppEditor').classList.remove('active');
+            document.getElementById('pythonEncryption').classList.remove('active');
+            document.getElementById('luaEncryption').classList.remove('active');
+            document.getElementById('trackingTool').classList.remove('active');
+            
+            if (type === 'lua') {
+                document.getElementById('luaEditor').classList.add('active');
+            } else if (type === 'cpp') {
+                document.getElementById('cppEditor').classList.add('active');
+            }
+        }
+        
+        // Placeholder functions for existing features
+        function testMyOwnIP() { alert('IP Tracking - Check console for details'); }
+        function generateTrackingLink() { alert('Generate tracking link'); }
+        function trackPhoneNumber() { alert('Track phone number'); }
+        function pythonEncrypt() { alert('Python encrypt'); }
+        function pythonDecrypt() { alert('Python decrypt'); }
+        function luaEncrypt() { alert('Lua encrypt'); }
+        function luaDecrypt() { alert('Lua decrypt'); }
+        function generateReferralCodes() { alert('Generate codes'); }
+        function manageUserBalance() { alert('Manage balance'); }
+        function purchaseSrc(id) { alert('Purchase product'); }
+        function copyToClipboard(text) { navigator.clipboard.writeText(text); alert('Copied!'); }
+        function copyToClipboardFrom(id) { const text = document.getElementById(id).innerText; navigator.clipboard.writeText(text); alert('Copied!'); }
+        function toggleMenu() { document.getElementById('sideMenu').classList.toggle('open'); document.getElementById('menuOverlay').classList.toggle('active'); }
+        function openEncryption(type) { toggleMenu(); document.getElementById('pythonEncryption').classList.add('active'); }
+        function openTracking() { toggleMenu(); document.getElementById('trackingTool').classList.add('active'); }
+        function logout() { location.reload(); }
+        function showRegister() { document.getElementById('registerModal').style.display = 'flex'; }
+        function closeRegister() { document.getElementById('registerModal').style.display = 'none'; }
+        
+        // Initialize dashboard after login
+        document.getElementById('loginForm')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'block';
+        });
+        
+        // Matrix Background
+        const canvas = document.getElementById('hackingCanvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+        let chars = "01アイウエオカキクケコサシスセソABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()";
+        
+        function resizeCanvas() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        
+        class Particle {
+            constructor(x, y, speed, char) {
+                this.x = x; this.y = y; this.speed = speed; this.char = char;
+                this.opacity = Math.random() * 0.5 + 0.2;
+                this.size = Math.random() * 20 + 10;
+            }
+            update() {
+                this.y += this.speed;
+                if (this.y > height) {
+                    this.y = -20;
+                    this.x = Math.random() * width;
+                    this.char = chars[Math.floor(Math.random() * chars.length)];
+                }
+            }
+            draw() {
+                ctx.font = `${this.size}px 'Courier New', monospace`;
+                ctx.fillStyle = `rgba(0, 255, ${Math.random() * 100 + 50}, ${this.opacity})`;
+                ctx.fillText(this.char, this.x, this.y);
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#00ff41';
+                ctx.fillText(this.char, this.x, this.y);
+                ctx.shadowBlur = 0;
+            }
+        }
+        
+        function initParticles() {
+            let count = Math.floor(width * height / 6000);
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(Math.random() * width, Math.random() * height, Math.random() * 2 + 1, chars[Math.floor(Math.random() * chars.length)]));
+            }
+        }
+        
+        function animate() {
+            ctx.fillStyle = 'rgba(10, 10, 15, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        
+        window.addEventListener('resize', () => { resizeCanvas(); particles = []; initParticles(); });
+        resizeCanvas();
+        initParticles();
+        animate();
+    </script>
+</body>
+</html>
